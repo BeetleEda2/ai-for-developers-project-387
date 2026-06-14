@@ -13,23 +13,22 @@ jobs:
       contains(github.event.comment.body, '/opencode')
     runs-on: ubuntu-latest
     permissions:
-      id-token: write
       contents: write
       pull-requests: write
       issues: write
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 1
           persist-credentials: false
 
+      - name: Install OpenCode
+        run: curl -fsSL https://opencode.ai/install | bash
+
       - name: Run OpenCode
-        uses: anomalyco/opencode/github@latest
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
-          MODEL: anthropic/claude-sonnet-4-20250514
-        with:
-          model: anthropic/claude-sonnet-4-20250514
-          share: true
+        run: |
+          export PATH="$HOME/.opencode/bin:$PATH"
+          export GITHUB_TOKEN="${{ secrets.GITHUB_TOKEN }}"
+          export OPENCODE_API_KEY="${{ secrets.OPENCODE_API_KEY }}"
+          export MODEL="anthropic/claude-sonnet-4-20250514"
+          opencode github run --model "anthropic/claude-sonnet-4-20250514"
