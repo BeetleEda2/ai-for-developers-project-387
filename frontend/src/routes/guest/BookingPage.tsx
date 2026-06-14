@@ -111,7 +111,7 @@ export function BookingPage() {
   };
 
   const tz = owner?.timezone ?? 'UTC';
-  const grouped = useMemo(() => (slots ? groupSlotsByDay(slots, tz) : []), [slots, tz]);
+  const grouped = useMemo(() => groupSlotsByDay(slots ?? [], tz), [slots, tz]);
 
   const availableDates = useMemo(() => {
     if (!grouped) return [];
