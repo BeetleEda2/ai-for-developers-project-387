@@ -97,6 +97,23 @@ export function useBooking(id: string | undefined) {
   });
 }
 
+export function useCancelBooking() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data, error } = await apiClient.DELETE('/bookings/{id}', {
+        params: { path: { id } },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['slots'] });
+    },
+  });
+}
+
 export function useCreateBooking() {
   const queryClient = useQueryClient();
   return useMutation({

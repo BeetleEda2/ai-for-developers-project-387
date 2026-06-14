@@ -208,4 +208,52 @@ describe('API', () => {
       expect(res.body.code).toBe('NOT_FOUND');
     });
   });
+
+  describe('DELETE /bookings/:id', () => {
+    it('cancels a booking and returns 200', async () => {
+      const listRes = await request(app).get('/event-types');
+      const etId = listRes.body[0].id;
+
+      const slotsRes = await request(app).get(`/event-types/${etId}/slots`);
+      const futureSlot = slotsRes.body.find((s: { available: boolean }) => s.available);
+      if (!futureSlot) return;
+
+      const createRes = await request(app)
+        .post('/bookings')
+        .send({
+          eventTypeId: etId,
+          start: futureSlot.start,
+          guestName: 'Cancel Test',
+          guestEmail: 'cancel@example.com',
+        });
+      expect(createRes.status).toBe(201);
+
+      const res = await request(app).delete(`/bookings/${createRes.body.id}`);
+      expect(res.status).toBe(200);
+      expect(res.body.id).toBe(createRes.body.id);
+    });
+
+    it('returns 404 for unknown id', async () => {
+      const res = await request(app).delete('/bookings/nonexistent');
+      expect(res.status).toBe(404);
+      expect(res.body.code).toBe('NOT_FOUND');
+    });
+
+    it('returns 422 for booking older than 24 hours', async () => {
+      const oldBooking = {
+        id: 'old-booking-1',
+        eventTypeId: 'et-1',
+        start: '2026-06-13T10:00:00.000Z',
+        end: '2026-06-13T10:30:00.000Z',
+        guestName: 'Old Guest',
+        guestEmail: 'old@example.com',
+        createdAt: '2026-06-12T10:00:00.000Z',
+      };
+      bookings.push(oldBooking);
+
+      const res = await request(app).delete(`/bookings/${oldBooking.id}`);
+      expect(res.status).toBe(422);
+      expect(res.body.code).toBe('CANCEL_TOO_LATE');
+    });
+  });
 });

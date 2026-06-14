@@ -28,4 +28,30 @@ test.describe('Guest booking — happy path', () => {
     await expect(page).toHaveURL('/');
     await expect(page.locator('text=Book a call')).toBeVisible({ timeout: 5000 });
   });
+
+  test('cancel booking from confirmation page', async ({ page }) => {
+    const uid = randomUUID().slice(0, 8);
+
+    await openFirstEventType(page);
+    await pickAvailableSlot(page);
+    await bookSlot(page, 'Cancel Guest', `cancel-${uid}@test.com');
+
+    // Confirmation visible
+    await expect(page.locator('text=Booking confirmed!')).toBeVisible({ timeout: 10000 });
+
+    // Click cancel
+    await page.click('text=Cancel booking');
+
+    // Confirm dialog appears
+    await expect(page.locator('text=Are you sure you want to cancel this booking?')).toBeVisible({ timeout: 5000 });
+
+    // Confirm cancellation
+    await page.click('text=Yes, cancel');
+
+    // Success notification
+    await expect(page.locator('text=Booking cancelled')).toBeVisible({ timeout: 5000 });
+
+    // Back to booking form (bookingSuccess cleared)
+    await expect(page.locator('text=Select a date')).toBeVisible({ timeout: 5000 });
+  });
 });

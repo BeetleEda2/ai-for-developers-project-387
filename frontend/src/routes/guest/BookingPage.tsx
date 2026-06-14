@@ -3,6 +3,8 @@ import { useParams, Link } from 'react-router-dom';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { Calendar } from '@mantine/dates';
+import { useDisclosure } from '@mantine/hooks';
+import { Modal } from '@mantine/core';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import {
@@ -22,8 +24,9 @@ import {
   Divider,
   Box,
   ScrollArea,
+  Group,
 } from '@mantine/core';
-import { useEventType, useSlots, useOwner, useCreateBooking } from '../../api/hooks';
+import { useEventType, useSlots, useOwner, useCreateBooking, useCancelBooking } from '../../api/hooks';
 import { groupSlotsByDay, formatDateTime } from '../../lib/datetime';
 import { getErrorMessage, isConflictError, isValidationError } from '../../lib/errors';
 
@@ -38,6 +41,7 @@ interface SelectedSlot {
 export function BookingPage() {
   const { id } = useParams<{ id: string }>();
   const createBooking = useCreateBooking();
+  const cancelBooking = useCancelBooking();
 
   const { data: eventType, isLoading: eventTypeLoading, error: eventTypeError } = useEventType(id);
   const { data: owner } = useOwner();
@@ -47,8 +51,10 @@ export function BookingPage() {
     refetch: refetchSlots,
   } = useSlots(id);
 
+  const [opened, { open, close }] = useDisclosure(false);
   const [selectedSlot, setSelectedSlot] = useState<SelectedSlot | null>(null);
   const [bookingSuccess, setBookingSuccess] = useState<{
+    bookingId: string;
     eventTypeTitle: string;
     dateTime: string;
     guestName: string;
@@ -81,6 +87,7 @@ export function BookingPage() {
         notes: values.notes || undefined,
       });
       setBookingSuccess({
+        bookingId: booking.id,
         eventTypeTitle: eventType?.title ?? '',
         dateTime: formatDateTime(booking.start, tz),
         guestName: booking.guestName,
@@ -147,6 +154,26 @@ export function BookingPage() {
     );
   }
 
+  const handleCancel = async () => {
+    if (!bookingSuccess) return;
+    try {
+      await cancelBooking.mutateAsync(bookingSuccess.bookingId);
+      notifications.show({
+        title: 'Booking cancelled',
+        message: 'Your booking has been successfully cancelled.',
+        color: 'green',
+      });
+      close();
+      setBookingSuccess(null);
+    } catch (err) {
+      notifications.show({
+        title: 'Cancel failed',
+        message: getErrorMessage(err),
+        color: 'red',
+      });
+    }
+  };
+
   if (bookingSuccess) {
     return (
       <Stack align="center" mt="xl">
@@ -167,9 +194,28 @@ export function BookingPage() {
             </Box>
           </Stack>
         </Paper>
-        <Button component={Link} to="/" variant="light">
-          Book another call
-        </Button>
+        <Group>
+          <Button component={Link} to="/" variant="light">
+            Book another call
+          </Button>
+          <Button color="red" variant="outline" onClick={open}>
+            Cancel booking
+          </Button>
+        </Group>
+
+        <Modal opened={opened} onClose={close} title="Cancel booking" centered>
+          <Text mb="md">
+            Are you sure you want to cancel this booking?
+          </Text>
+          <Group justify="flex-end">
+            <Button variant="default" onClick={close}>
+              No, keep it
+            </Button>
+            <Button color="red" loading={cancelBooking.isPending} onClick={handleCancel}>
+              Yes, cancel
+            </Button>
+          </Group>
+        </Modal>
       </Stack>
     );
   }

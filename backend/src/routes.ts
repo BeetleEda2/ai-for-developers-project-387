@@ -66,6 +66,22 @@ router.get('/bookings/:id', (req, res) => {
   res.json(b);
 });
 
+router.delete('/bookings/:id', (req, res) => {
+  const idx = bookings.findIndex((b) => b.id === req.params.id);
+  if (idx === -1) {
+    return res.status(404).json({ code: 'NOT_FOUND', message: 'Booking not found' });
+  }
+
+  const booking = bookings[idx];
+  const hoursSinceCreation = dayjs.utc().diff(dayjs.utc(booking.createdAt), 'hour');
+  if (hoursSinceCreation >= 24) {
+    return res.status(422).json({ code: 'CANCEL_TOO_LATE', message: 'Cannot cancel a booking older than 24 hours' });
+  }
+
+  bookings.splice(idx, 1);
+  res.json(booking);
+});
+
 router.post('/bookings', (req, res) => {
   const validation = validateBookingCreate(req.body);
   if (!validation.valid) {
