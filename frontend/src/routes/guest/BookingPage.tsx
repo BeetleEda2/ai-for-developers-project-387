@@ -111,14 +111,14 @@ export function BookingPage() {
   };
 
   const tz = owner?.timezone ?? 'UTC';
-  const grouped = slots ? groupSlotsByDay(slots, tz) : [];
+  const grouped = useMemo(() => groupSlotsByDay(slots ?? [], tz), [slots, tz]);
 
   const availableDates = useMemo(() => {
     if (!grouped) return [];
     return grouped.map((g) => g.date);
   }, [grouped]);
 
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   const selectedDaySlots = useMemo(() => {
     if (!selectedDate || !grouped) return [];
