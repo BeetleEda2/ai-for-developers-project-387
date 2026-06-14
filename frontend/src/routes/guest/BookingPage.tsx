@@ -118,7 +118,7 @@ export function BookingPage() {
     return grouped.map((g) => g.date);
   }, [grouped]);
 
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   const selectedDaySlots = useMemo(() => {
     if (!selectedDate || !grouped) return [];
