@@ -33,7 +33,8 @@ export interface paths {
         get: operations["Bookings_read"];
         put?: never;
         post?: never;
-        delete?: never;
+        /** @description Отменить бронирование (гость). 422 если бронь старше 24 часов. */
+        delete: operations["Bookings_cancel"];
         options?: never;
         head?: never;
         patch?: never;
@@ -147,6 +148,12 @@ export interface components {
             guestName: string;
             guestEmail: string;
             notes?: string;
+        };
+        /** @description Попытка отменить бронирование старше 24 часов. */
+        CancelTooLateError: {
+            /** @enum {string} */
+            code: "CANCEL_TOO_LATE";
+            message: string;
         };
         /** @description Время уже занято другим бронированием. */
         ConflictError: {
@@ -298,6 +305,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NotFoundError"];
+                };
+            };
+        };
+    };
+    Bookings_cancel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The request has succeeded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Booking"];
+                };
+            };
+            /** @description Запрошенный ресурс не найден. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotFoundError"];
+                };
+            };
+            /** @description Попытка отменить бронирование старше 24 часов. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CancelTooLateError"];
                 };
             };
         };

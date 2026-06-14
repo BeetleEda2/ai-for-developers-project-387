@@ -106,6 +106,14 @@ model ValidationError {
   message: string;
 }
 
+/** Попытка отменить бронирование старше 24 часов. */
+@error
+model CancelTooLateError {
+  @statusCode statusCode: 422;
+  code: "CANCEL_TOO_LATE";
+  message: string;
+}
+
 /** Запрошенный ресурс не найден. */
 @error
 model NotFoundError {
@@ -175,4 +183,7 @@ namespace Bookings {
     @statusCode statusCode: 201;
     @body created: Booking;
   } | ConflictError | ValidationError;
+
+  /** Отменить бронирование (гость). 422 если бронь старше 24 часов. */
+  @delete op cancel(@path id: string): Booking | NotFoundError | CancelTooLateError;
 }
