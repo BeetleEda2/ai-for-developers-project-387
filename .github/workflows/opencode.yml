@@ -18,19 +18,13 @@ jobs:
       issues: write
       id-token: write
     env:
-      MODEL: deepseek/deepseek-chat
       OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 1
-          persist-credentials: false
 
-      - name: Install OpenCode
-        run: curl -fsSL https://opencode.ai/install | bash
-
-      - name: Run OpenCode
-        run: |
-          export PATH="$HOME/.opencode/bin:$PATH"
-          opencode github run --print-logs --log-level DEBUG
+      - uses: anomalyco/opencode/github@latest
+        with:
+          model: opencode/deepseek-v4-flash-free
