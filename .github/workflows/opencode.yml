@@ -27,5 +27,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+          MODEL: anthropic/claude-sonnet-4-20250514
         with:
           share: true
