@@ -16,6 +16,7 @@ jobs:
       contents: write
       pull-requests: write
       issues: write
+      id-token: write
     env:
       MODEL: deepseek/deepseek-chat
       OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
