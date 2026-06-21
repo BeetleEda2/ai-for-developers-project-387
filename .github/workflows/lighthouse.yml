@@ -1,0 +1,96 @@
+name: nightly-lighthouse
+
+on:
+  schedule:
+    - cron: '0 3 * * 1-5'
+  workflow_dispatch:
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Build Docker image
+        run: docker build -t call-booking .
+
+      - name: Start app container
+        run: docker run -d -p 3000:3000 --name app call-booking
+
+      - name: Wait for app readiness
+        run: |
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:3000/owner && echo "App is ready" && break
+            echo "Waiting... attempt $i"
+            sleep 2
+          done
+
+      - name: Install Lighthouse
+        run: npm install -g lighthouse
+
+      - name: Run Lighthouse audit
+        run: |
+          mkdir -p lighthouse-report
+          lighthouse http://localhost:3000 \
+            --output html --output json \
+            --output-path ./lighthouse-report/report \
+            --chrome-flags="--headless --no-sandbox --disable-gpu"
+
+      - name: Upload Lighthouse report
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-report
+          path: lighthouse-report/
+          retention-days: 30
+
+      - name: Check scores and create issue if needed
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+
+            let scores;
+            try {
+              const report = JSON.parse(fs.readFileSync('./lighthouse-report/report.json', 'utf8'));
+              scores = {
+                performance: Math.round(report.categories.performance.score * 100),
+                accessibility: Math.round(report.categories.accessibility.score * 100),
+                'best-practices': Math.round(report.categories['best-practices'].score * 100),
+                seo: Math.round(report.categories.seo.score * 100),
+              };
+            } catch (e) {
+              console.log('Could not parse Lighthouse report:', e.message);
+              return;
+            }
+
+            console.log('Lighthouse scores:', scores);
+
+            const thresholds = { performance: 90, accessibility: 90, 'best-practices': 90, seo: 90 };
+            const failures = Object.entries(scores)
+              .filter(([key, val]) => val < thresholds[key])
+              .map(([key, val]) => `- **${key}**: ${val} (threshold: ${thresholds[key]})`);
+
+            if (failures.length === 0) {
+              console.log('All scores passed thresholds');
+              return;
+            }
+
+            const artifactUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Lighthouse audit: ${failures.length} score(s) below threshold`,
+              body: `## Lighthouse Audit Report
+
+              ### Scores below threshold:
+              ${failures.join('\n')}
+
+              [Download full report](${artifactUrl})
+
+              _Generated automatically by nightly-lighthouse workflow_`,
+              labels: ['lighthouse'],
+            });
