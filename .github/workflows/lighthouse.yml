@@ -36,8 +36,10 @@ jobs:
           mkdir -p lighthouse-report
           lighthouse http://localhost:3000 \
             --output html --output json \
-            --output-path ./lighthouse-report/report \
+            --output-path lighthouse-report/report \
             --chrome-flags="--headless --no-sandbox --disable-gpu"
+          echo "Files in lighthouse-report:"
+          ls -la lighthouse-report/
 
       - name: Upload Lighthouse report
         uses: actions/upload-artifact@v4
@@ -51,10 +53,18 @@ jobs:
         with:
           script: |
             const fs = require('fs');
+            const path = require('path');
 
             let scores;
             try {
-              const report = JSON.parse(fs.readFileSync('./lighthouse-report/report.json', 'utf8'));
+              const dir = fs.readdirSync('lighthouse-report');
+              const jsonFile = dir.find(f => f.endsWith('.json'));
+              if (!jsonFile) {
+                console.log('No JSON report found in lighthouse-report:', dir);
+                return;
+              }
+              console.log('Found report:', jsonFile);
+              const report = JSON.parse(fs.readFileSync(path.join('lighthouse-report', jsonFile), 'utf8'));
               scores = {
                 performance: Math.round(report.categories.performance.score * 100),
                 accessibility: Math.round(report.categories.accessibility.score * 100),
