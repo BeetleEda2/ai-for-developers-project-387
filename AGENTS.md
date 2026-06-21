@@ -29,6 +29,22 @@
 5. ⬜ Bug: некорректное сообщение при 409 с Prism
 6. ⬜ Bug: отсутствует валидация длины заметок
 
+## Self-Assessment: Agent Efficiency
+
+| Задача | Попыток | С первого раза |
+|---|---|---|
+| GitHub Action setup (model, permissions, auth) | ~7 | ❌ |
+| Feature #1 — Cancel booking (PR #3) | 1 | ✅ |
+| Triage — root cause analysis (issue #4) | 1 | ✅ |
+| Fix — wrap in useMemo (PR #5) | 1 | ✅ |
+| Review — type mismatch fix | 1 | ✅ |
+| Review — ?? hoisting fix | 1 | ✅ |
+| Lighthouse workflow | 1 | ✅ |
+
+**Вывод:** После начальной настройки (которая заняла ~7 итераций из-за permissions и модели), агент решает задачи с первого раза. Triage, fix и review-цикл отработали предсказуемо.
+
 ## Known Issues
 - `release-please.yml` fails: "GitHub Actions is not permitted to create or approve pull requests" — needs repo Settings → Actions → "Allow GitHub Actions to create and approve pull requests" enabled
-- Workflow double-triggers when agent responds (its comment may contain `/oc`)
+- ~~Workflow double-triggers~~ ✅ Fixed: added `github.actor != 'opencode-agent[bot]'` exclusion
+- ci.yml permissions fixed: restricted to `contents: read`
+- hexlet-check.yml permissions fixed: restricted to `contents: read`

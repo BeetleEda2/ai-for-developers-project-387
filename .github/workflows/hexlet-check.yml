@@ -5,6 +5,9 @@
 
 name: hexlet-check
 
+permissions:
+  contents: read
+
 on:
   push:
     branches:
