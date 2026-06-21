@@ -26,6 +26,17 @@
 
 ### 6. Отсутствует валидация длины заметок
 
+## Performance
+
+### 7. Оптимизация Lighthouse-метрик
+
+**Описание:** FCP 4.6s, LCP 5.0s — Mantine CSS 237 KiB блокирует рендер, много неиспользуемого JS/CSS.
+
+**Изменения:**
+- Frontend: создать `vite.config.ts` с `manualChunks` для Mantine
+- Frontend: импортировать только используемые компоненты Mantine
+- Frontend: настроить CSS-сплиттинг через `postcss-preset-mantine`
+
 ## Порядок реализации
 
-1. Bug #4 → 2. Bug #5 → 3. Feature #1 → 4. Feature #2 → 5. Feature #3 → 6. Bug #6
+1. Bug #4 → 2. Bug #5 → 3. Feature #1 → 4. Feature #2 → 5. Feature #3 → 6. Bug #6 → 7. Performance
